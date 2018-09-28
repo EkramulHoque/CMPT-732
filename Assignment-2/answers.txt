@@ -1,0 +1,23 @@
+1.In the WikipediaPopular class, it would be much more interesting to find the page that is most popular, not just the view count (as we did with Spark). What would be necessary to modify your class to do this?
+
+Answer: We can introduce a writable class (like the LongPairWritable) which will map a key and a value. This would be used in the mapper class to generate an output of most popular page and its view count. And in the reducer, we can iterate each pair as an input and generate the final result.  
+
+2.An RDD has many methods: it can do many more useful tricks than were at hand with MapReduce. Write a sentence or two to explain the difference between .map and .flatMap. Which is more like the MapReduce concept of mapping? 
+
+Answer: The '.map' function is an RDD operations which is applied to each of the partition that has been created. It maps each element of a single partition i.e it transforms an RDD of length N into another RDD of length N. The input and output RDDs will typically have the same number of records. Although one can define his/her own custom business logic which will be applied to all the elements of RDD.
+
+The '.flatmap' has a very similar functionality like the '.map' function but it allows returning 0,1 or more elements. It can take one input and transform into 3 partition or zero depending on the logic it has been assigned to. flatMap() transforms an RDD of length N into another RDD of length M.
+
+3.Do the same for .reduce and .reduceByKey. Which is more like the MapReduce concept of reducing?    
+
+Answer: The .reduceByKey method is more like the MapReduce concept of reducing. It reduces the values over each key. It almost work similarly like a combiner as it shuffles data from multiple partitions and merges the data locally using the same associative function before sending data accross the partitions. Both .reduce(f) and .reduceByKey(f) requires f to be commutative and associate as input
+
+4.When finding popular Wikipedia pages, the maximum number of page views is certainly unique, but the most popular page might be a tie. What would your improved Python implementation do if there were two pages with the same highest number of page views in an hour? What would be necessary to make your code find all of the pages views the maximum number of times? 
+
+Answer:
+def max_list(val_1,val_2):
+	if(val_1[0] > val_2[0]):
+		return val_1
+	elif(val_1[0] == val_2[0]):
+		return val_1 + val_2
+

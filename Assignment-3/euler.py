@@ -6,7 +6,7 @@ assert sys.version_info >= (3, 5) # make sure we have Python 3.5+
 
 # add more functions as necessary
 def euler(value):
-	random.seed(10)
+	#random.seed(10)
 	total_iterations = 0
 	for i in value:
 		sum = 0.0

@@ -37,13 +37,20 @@ def tab_separated(kv):
 def get_key_1(kv):
 	return kv[0]
 
+def max_list(val_1,val_2):
+	if(val_1[0] > val_2[0]):
+		return val_1
+	elif(val_1[0] == val_2[0]):
+		return val_1 + val_2
+
+
 
 
 text = sc.textFile(inputs).map(mySplit).filter(check_tuple_en)
  
 filtered = text.map(get_key) 
 
-filtered = filtered.reduceByKey(max)
+filtered = filtered.reduceByKey(max_list)
 
 #print(filtered.collect())
 
@@ -51,6 +58,6 @@ outdata = filtered.sortBy(get_key_1)
 
 outdata = outdata.map(tab_separated)
 
-outdata.saveAsTextFile(output)
-#print(outdata.collect())
+#outdata.saveAsTextFile(output)
+print(outdata.collect())
  
