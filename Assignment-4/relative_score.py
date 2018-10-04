@@ -11,7 +11,7 @@ def main(inputs, output):
 	json_values = text.map(map_json).reduceByKey(add_pairs)
 	averages = json_values.map(get_average).filter(filter_average)
 	commentbysub = text.map(key_comment).join(averages).map(get_relative_score)
-	commentbysub.sortBy(lambda x: x[0], False).saveAsTextFile(output)	
+	commentbysub.sortBy(lambda x: x[0], False).map(json.dumps)saveAsTextFile(output)	
 	
 def map_json(val):
 	key = val['subreddit']
