@@ -9,7 +9,7 @@ Answer: The wordcount-3 data was not skewed and it was distributed uniformly.
 
 
 3.How could you modify the wordcount-5 input so that the word count code can process it and get the same results as fast as possible? (It's possible to get about another minute off the running time.)
-Answers: We can manually split the wordcount-5 data set with in equal filesizes. 
+Answers: We can manually split the wordcount-5 data set in equal filesizes. 
 
 4.When experimenting with the number of partitions while estimating Euler's constant, you likely didn't see much difference for a range of values, and chose the final value in your code somewhere in that range. What range of partitions numbers was “good” (on the desktop/laptop where you were testing)?
 
