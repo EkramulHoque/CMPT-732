@@ -11,16 +11,13 @@ def main(inputs, output):
 	json_values = text.map(map_json).reduceByKey(add_pairs)
 	averages = json_values.map(get_average).filter(filter_average)
 	commentbysub = text.map(key_comment).join(averages).map(get_relative_score)
-	commentbysub.sortBy(lambda x: x[0], False).map(json.dumps)saveAsTextFile(output)	
+	commentbysub.sortBy(lambda x: x[0], False).map(json.dumps).saveAsTextFile(output)	
 	
 def map_json(val):
-	key = val['subreddit']
-	score = val ['score']
-	return tuple((key,(1,score)))
+	return tuple((val['subreddit'],(1,val ['score'])))
 
 def key_comment(val):
-	key = val['subreddit']
-	return tuple((key,val))
+	return tuple((val['subreddit'],val))
 
 
 def add_pairs(val1,val2):
@@ -34,8 +31,7 @@ def filter_average(val):
 	return val[1] > 0
 
 def get_relative_score(kv):
-	k, v = kv
-	return (v[0]['score']/v[1], v[0]['author'])
+	return (kv[1][0]['score']/kv[1][1], kv[1][0]['author'])
 
 
 if __name__ == '__main__':

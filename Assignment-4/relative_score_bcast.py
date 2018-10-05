@@ -15,13 +15,10 @@ def main(inputs, output):
 	commentbysub.sortBy(lambda x: x[0], False).map(json.dumps).saveAsTextFile(output)	
 	
 def map_json(val):
-	key = val['subreddit']
-	score = val ['score']
-	return tuple((key,(1,score)))
+	return tuple((val['subreddit'],(1,val ['score'])))
 
 def key_comment(val):
-	key = val['subreddit']
-	return tuple((key,val))
+	return tuple((val['subreddit'],val))
 
 
 def add_pairs(val1,val2):
