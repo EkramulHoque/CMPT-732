@@ -1,0 +1,22 @@
+1) 
+I used the reddit-4 dataset:
+
+Without cache: 49.918s
+With cache: 36.511s
+
+Large data set helped to observe the change in time for this problem. Caching allowed the RDD to be referenced once in the code
+which reduced the overhead cost.
+
+2) 
+The overhead cost of an operation increases when references to an RDD are made N number of times (i.e more than one).  
+Caching an RDD makes it easier since it is only referenced once making the code perform better.
+
+3) 
+The broadcast join works better when the data we are broadcasting is small in size, since it is stored in each executor's memory.
+Broadcast join allows parallelism of the large DF to be maintained and shuffle is not needed. 
+
+4) 
+As the data set is materialized and send over the network it does only bring significant performance improvement, if 
+it is considerable small. In addition it must fit to the memory of the executor. Thus for large data set, it 
+can be costly and in efficient to use broadcast join as it will add overhead to the executor's memory.
+
