@@ -21,21 +21,19 @@ observation_schema = types.StructType([
 
 def main(inputs, output):
     weather = spark.read.csv(inputs, schema=observation_schema).drop_duplicates()
-    free = weather.filter(weather.qflag.isNull()).filter(weather.station.startswith('CA')).cache()
 
     data_max = weather.filter(weather.qflag.isNull()).filter(weather.observation == 'TMAX').cache()
     data_min = weather.filter(weather.qflag.isNull()).filter(weather.observation == 'TMIN').cache()
 
-    maxs = data_max.groupBy(data_max.date).agg(f.max(data_max.value).alias('tmax')).alias('maxs').sort(data_max.date)
-    mins = data_min.groupBy(data_min.date).agg(f.max(data_min.value).alias('tmin')).alias('mins')
+    data_max = data_max.withColumn('tmax',data_max.value)
+    data_min = data_min.withColumn('tmin',data_min.value)
 
-    new_max = data_max.join(maxs, (maxs.date==data_max.date)).select(data_max.date,data_max.station,maxs.tmax).sort(data_max.date)
-    new_min = data_min.join(mins,(mins.date==data_min.date)).select(data_min.date,data_min.station,mins.tmin)
+    data = data_max.join(data_min,(data_max.date == data_min.date) & (data_max.station == data_min.station)).select(data_max.date,data_max.station,data_max.tmax,data_min.tmin)
+    range = data.withColumn('range', (data.tmax-data.tmin)/10).drop('tmax','tmin')
 
-    data = new_max.join(new_min,(new_max.date == new_min.date) & (new_max.station == new_min.station)).select(new_max.date,new_max.station,new_max.tmax,new_min.tmin)  
-    result = data.withColumn('range', (data.tmax-data.tmin)/10).drop('tmax','tmin').sort(data.date,data.station)
-    
-        
+    range_reduce = range.groupBy(data.date).agg(f.max(range.range).alias('range_max'))
+    result = range.join(range_reduce,(range_reduce.date==range.date) & (range_reduce.range_max==range.range)).select(range.date,range.station,range.range).sort(range.date)
+
     result.show(n=10)
     
    
