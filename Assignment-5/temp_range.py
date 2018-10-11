@@ -21,17 +21,23 @@ observation_schema = types.StructType([
 
 def main(inputs, output):
     weather = spark.read.csv(inputs, schema=observation_schema).drop_duplicates()
-    new_frame = weather.filter(weather.qflag.isNull()).filter(weather.station.startswith('CA'))
-    data_max = new_frame.filter(new_frame.observation == 'TMAX').alias('max')
-    data_min = new_frame.filter(new_frame.observation == 'TMIN').alias('min')
+    free = weather.filter(weather.qflag.isNull()).filter(weather.station.startswith('CA')).cache()
+
+    data_max = weather.filter(weather.qflag.isNull()).filter(weather.observation == 'TMAX').cache()
+    data_min = weather.filter(weather.qflag.isNull()).filter(weather.observation == 'TMIN').cache()
+
+    maxs = data_max.groupBy(data_max.date).agg(f.max(data_max.value).alias('tmax')).alias('maxs').sort(data_max.date)
+    mins = data_min.groupBy(data_min.date).agg(f.max(data_min.value).alias('tmin')).alias('mins')
+
+    new_max = data_max.join(maxs, (maxs.date==data_max.date)).select(data_max.date,data_max.station,maxs.tmax).sort(data_max.date)
+    new_min = data_min.join(mins,(mins.date==data_min.date)).select(data_min.date,data_min.station,mins.tmin)
+
+    data = new_max.join(new_min,(new_max.date == new_min.date) & (new_max.station == new_min.station)).select(new_max.date,new_max.station,new_max.tmax,new_min.tmin)  
+    result = data.withColumn('range', (data.tmax-data.tmin)/10).drop('tmax','tmin').sort(data.date,data.station)
     
-    #data = new_frame.withColumn("range", (data_max.max - data_min.min) / 10)
-    etl_data = data[['station','date','range']]
-    # new_frame = data.filter(data.lang == 'en').filter(data.title != 'Main_Page').filter(data.title.contains('Special:') == False).cache()
-    # maxs = new_frame.groupBy(new_frame.hour).agg(f.max(new_frame.views).alias('mx')).alias('maxs')
-    # result=new_frame.join(maxs,(maxs.hour == new_frame.hour) & (new_frame.views == maxs.mx)).select(new_frame.hour, new_frame.title, new_frame.views).drop(maxs.mx).sort(new_frame.hour, new_frame.title).drop_duplicates()
-    # result.write.json(output, mode='overwrite')
-    etl_data.show()
+        
+    result.show(n=10)
+    
    
 
 if __name__ == '__main__':

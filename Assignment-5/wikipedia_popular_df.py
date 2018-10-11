@@ -25,8 +25,8 @@ def main(inputs, output):
     new_frame = data.filter(data.lang == 'en').filter(data.title != 'Main_Page').filter(data.title.contains('Special:') == False).cache()
     maxs = new_frame.groupBy(new_frame.hour).agg(f.max(new_frame.views).alias('mx')).alias('maxs')
     result=new_frame.join(maxs,(maxs.hour == new_frame.hour) & (new_frame.views == maxs.mx)).select(new_frame.hour, new_frame.title, new_frame.views).drop(maxs.mx).sort(new_frame.hour, new_frame.title).drop_duplicates()
-    result.write.json(output, mode='overwrite')
-    #result.show(n=100)
+    #result.write.json(output, mode='overwrite')
+    result.show(n=100)
    
 
 if __name__ == '__main__':
