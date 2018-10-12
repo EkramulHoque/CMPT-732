@@ -6,6 +6,24 @@ key value pair.
 
 2. What was the running time for your Reddit averages implementations in the five scenarios described above? How much difference did Python implementation make (PyPy vs the default CPython)? Why was it large for RDDs but not for DataFrames? 
 
+
+
+
+3.How much of a difference did the broadcast hint make to the Wikipedia popular code's running time (and on what data set)?
+
+The broadcast join made an improvement in running time when applied to a large data set i.e for pagecount-with-3 the results are given below:
+
+With broadcast = 1m 20s
+Without broadast = 1m 48s
+
+
+4.How did the Wikipedia popular execution plan differ with and without the broadcast hint? 
+
+The broadcast join will join Dataframes with other Dataframe as a broadcast variable i.e only once compare to the default method where 
+it groups the data from both Dataframes into a single executor. In broadcast join there is no shuffle and it is merged with already sorted 
+data.
+
+
 5.For the weather data question, did you prefer writing the “DataFrames + Python methods” style, or the “temp tables + SQL syntax” style form solving the problem? Which do you think produces more readable code? 
 
 'Dataframes + Python' methods style produces more readable code that 'temp tables + SQL syntax". In our Spark SQL string queries, we won't know a syntax error until runtime (which could be costly), whereas in DataFrames syntax errors can be caught at compile time. Althought it can be tedious to undestand the python syntax but with SQL syntax the statements can be very long and complicated to understand.
