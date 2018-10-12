@@ -24,9 +24,6 @@ def main(inputs, output):
     data = new_frame.withColumn("tmax", weather.value / 10)
     etl_data = data[['station','date','tmax']]
     etl_data.write.json(output, compression='gzip', mode='overwrite')
-    #etl_data.show(n=10)
-    
-    # main logic starts here
 
 if __name__ == '__main__':
     inputs = sys.argv[1]

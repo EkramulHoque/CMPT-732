@@ -28,15 +28,10 @@ comments_schema = types.StructType([ # commented-out fields won't be read
     types.StructField('subreddit', types.StringType(), True),
     types.StructField('subreddit_id', types.StringType(), True),
     types.StructField('ups', types.LongType(), True),
-    #types.StructField('year', types.IntegerType(), False),
-    #types.StructField('month', types.IntegerType(), False),
 ])
 
 comments = spark.read.json(inputs, schema=comments_schema)
 comments.show(n=10)
-# sc = spark.sparkContext
-
-# add more functions as necessary
 
 def main(inputs, output):
     # main logic starts here
