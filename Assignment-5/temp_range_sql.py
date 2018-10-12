@@ -20,7 +20,6 @@ observation_schema = types.StructType([
 
 
 def main(inputs, output):
-
     weather = spark.read.csv(inputs, schema=observation_schema).drop_duplicates().cache()
     weather.createOrReplaceTempView("weather")
     data_max = spark.sql("SELECT date, station , value as tmax FROM weather where qflag is NULL AND observation = 'TMAX' ")
@@ -32,7 +31,6 @@ def main(inputs, output):
     range_reduce = spark.sql("Select range.date, MAX(range.range) as range_max from range GROUP BY range.date")
     range_reduce.createOrReplaceTempView("range_reduce")
     result = spark.sql("SELECT range.date as date, range.station as station, range.range FROM range JOIN range_reduce ON range.date = range_reduce.date AND range.range = range_reduce.range_max ORDER BY range.date")
-    #result.show()
     result.write.json(output, mode='overwrite')
 
 if __name__ == '__main__':

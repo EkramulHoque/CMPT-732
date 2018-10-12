@@ -27,7 +27,6 @@ def main(inputs, output):
     range = data.withColumn('range', (data.tmax-data.tmin)/10).drop('tmax','tmin')
     range_reduce = range.groupBy(data.date).agg(f.max(range.range).alias('range_max'))
     result = range.join(range_reduce,(range_reduce.date==range.date) & (range_reduce.range_max==range.range)).select(range.date,range.station,range.range).sort(range.date)
-    #result.show(n=10)
     result.write.json(output, mode='overwrite')
 
 if __name__ == '__main__':

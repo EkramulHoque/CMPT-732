@@ -28,14 +28,7 @@ comments_schema = types.StructType([ # commented-out fields won't be read
     types.StructField('subreddit', types.StringType(), True),
     types.StructField('subreddit_id', types.StringType(), True),
     types.StructField('ups', types.LongType(), True),
-    #types.StructField('year', types.IntegerType(), False),
-    #types.StructField('month', types.IntegerType(), False),
 ])
-
-
-# sc = spark.sparkContext
-
-# add more functions as necessary
 
 def main(inputs, output):
 	comments = spark.read.json(inputs, schema=comments_schema)
