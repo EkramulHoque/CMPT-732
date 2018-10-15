@@ -1,4 +1,4 @@
-1.In the Reddit averages execution plan, which fields were loaded? How was the average computed (and was a combiner-like step done)? 
+﻿1.In the Reddit averages execution plan, which fields were loaded? How was the average computed (and was a combiner-like step done)? 
 
 The fields are 'score' and 'subreddit' which were loaded in the physical plan during the execution. The averages are computed
 in the optimized logical plan where it was aggregated with the 'subreddit' and its average just like the combiner with a 
@@ -6,7 +6,14 @@ key value pair.
 
 2. What was the running time for your Reddit averages implementations in the five scenarios described above? How much difference did Python implementation make (PyPy vs the default CPython)? Why was it large for RDDs but not for DataFrames? 
 
+Mapreduce = 1m41.012s
+Spark Dataframes (Cpython) = 1m2.001s
+Spark RDDS (Cpython) =  3m20.01s
+Spark Dataframes (PyPy) = 1m1.721s
+Spark RDDs (PyPy) = 1m50.12s
 
+PyPy implementation was faster for both Spark DataFrames and RDDs. Since PyPy executes python just-in-time compiler
+and Spark Dataframe code is more concise than RDDs code.
 
 
 3.How much of a difference did the broadcast hint make to the Wikipedia popular code's running time (and on what data set)?
