@@ -2,7 +2,7 @@ from pyspark import SparkConf, SparkContext
 import sys
 import math
 assert sys.version_info >= (3, 5) # make sure we have Python 3.5+
-from pyspark.sql import SQLContext, functions as f
+from pyspark.sql import SQLContext, functions
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, ArrayType
 
 schema = StructType([
@@ -44,18 +44,22 @@ def main(inputs,output,source,destination):
     next_node = sc.parallelize([[source]])
     next_node = sqlContext.createDataFrame(next_node,schema3).cache()
     #get the neighbours of a single node
-    #for i in range(6):
-    neighbours = graph_edges.join(next_node, graph_edges.source == next_node.node).drop('node').cache()
-    new_paths = known_paths.join(neighbours, known_paths.node == neighbours.source).select(neighbours.destination,neighbours.source,known_paths.distance)
-    new_paths = new_paths.withColumn('new_dist', new_paths.distance + 1).drop(new_paths.distance).cache()
-        # union new paths and known paths
-    known_paths = known_paths.unionAll(new_paths).dropDuplicates().cache()
-    min_paths = known_paths.groupBy(known_paths.node).agg(f.min(known_paths.distance))
+    for i in range(6):
+	    neighbours = graph_edges.join(next_node, graph_edges.source == next_node.node).drop('node').cache()
+	    new_paths = known_paths.join(neighbours, known_paths.node == neighbours.source).select(neighbours.destination,neighbours.source,known_paths.distance)
+	    new_paths = new_paths.withColumn('new_dist', new_paths.distance + 1).drop(new_paths.distance).cache()
+	    # union new paths and known paths
+	    known_paths = known_paths.unionAll(new_paths).dropDuplicates().cache()
+	    min_paths = known_paths.groupBy(known_paths.node).agg(functions.min(known_paths.distance).alias('min_distance')).withColumnRenamed('node','min_node')
+	    known_paths =  min_paths.join(known_paths,(min_paths.min_node == known_paths.node) & (min_paths.min_distance == known_paths.distance)).drop('min_node','min_distance').cache()
+	    #set next node
+	    next_node = neighbours.select('source').withColumnRenamed('source','node')
+	    if next_node[next_node.node == destination].count() > 0 :
+	    	break
+    known_paths.show()
 
-    next_node = neighbours.select('source').withColumnRenamed('source','node')
-    print("=================")
-    min_paths.show()
-
+    
+   
 
 
 if __name__ == '__main__':
