@@ -14,25 +14,6 @@ schema = StructType([
     StructField('timestamp', TimestampType(), False)
 ])
 
-def r2_reduce(kv):
-    key, value = kv
-    return (key+'2',value*value)
-
-def corr_func(kv):
-    key, sixsum = kv
-    return  (key, (sixsum[0]*sixsum[5] - sixsum[1]*sixsum[2])/(math.sqrt(sixsum[0]*sixsum[3]-sixsum[1]*sixsum[1]) \
-        * math.sqrt(sixsum[0]*sixsum[4]-sixsum[2]*sixsum[2])))
-
-def map_six_val(kv):
-    x, y = kv
-    return ("r", (1,y[0],y[1],y[0]*y[0],y[1]*y[1],y[0]*y[1]))
-
-def map_host(line):
-    return (line['hostname'],(1, line['size']))
-
-def add_tuples(a, b):
-    return tuple(sum(p) for p in zip(a,b))
-
 def word_split(line):
     split_words = linere.split(line)
     return split_words
@@ -47,12 +28,13 @@ def main(inputs):
     text = sc.textFile(inputs)
     nasa_rdd = text.map(word_split).filter(filter_len).map(create_rdd)
     nasa_table = sqlContext.createDataFrame(nasa_rdd, schema)
-    nasa_host_count = nasa_table.rdd.map(map_host).reduceByKey(add_tuples).map(map_six_val)
-    sum_tuple = nasa_host_count.reduceByKey(add_tuples)
-    r = sum_tuple.map(corr_func)
-    r2 = r.map(r2_reduce)
-    print(r.collect())
-    print(r2.collect())
+    nasa_table = nasa_table.groupBy(nasa_table.hostname).agg(functions.count('*').alias('x'),functions.sum(nasa_table.size).alias('y')).drop('hostname')
+    nasa_table = nasa_table.withColumn('n',functions.lit(1)).withColumn('x2',nasa_table.x * nasa_table.x).withColumn('y2',nasa_table.y * nasa_table.y).withColumn('xy',nasa_table.y * nasa_table.x)
+    nasa_table = nasa_table.groupBy().sum()
+    nasa_table = nasa_table.withColumn('r',(nasa_table['sum(n)'] * nasa_table['sum(xy)'] - nasa_table['sum(x)'] * nasa_table['sum(y)']) / (functions.sqrt(nasa_table['sum(n)'] * nasa_table['sum(x2)'] - nasa_table['sum(x)']**2) * functions.sqrt(nasa_table['sum(n)'] * nasa_table['sum(y2)'] - nasa_table['sum(y)']**2)))
+    nasa_table = nasa_table.withColumn('r2',nasa_table.r**2)
+    to_list = [list(row) for row in nasa_table.collect()]
+    print(to_list[0][6],to_list[0][7])
 
 
 if __name__ == '__main__':
