@@ -7,7 +7,7 @@ Ans: The query fails when I query a keyspace with replication factor 1 and one n
 factor 2.
 
 3. How did the consistency level affect the results with the node up/down?
-Ans.
+Ans:
 With consistency level all, A write must be written to the commit log and memtable on all replica nodes in the cluster for that partition.
 and for read returns the record after all replicas have responded. The read operation will fail if a replica does not respond.
 On the other hand, with consistency level one, A write must be written to the commit log and memtable of at least one replica node and

@@ -1,5 +1,7 @@
 from cassandra.cluster import Cluster
-import os, sys, gzip, re
+from cassandra.query import BatchStatement
+from cassandra import ConsistencyLevel
+import os, sys, gzip, re, uuid
 import datetime
 
 
@@ -8,31 +10,30 @@ def main(inputs,key_space,table):
     session = cluster.connect(key_space)
     session.execute("""
             CREATE TABLE IF NOT EXISTS nasalogs (
+                id UUID,
                 host TEXT,
-                id uuid,
                 datetime TIMESTAMP,
                 path TEXT,
                 bytes INT,
-                PRIMARY KEY (host, id)
+                PRIMARY KEY (host,id)
             )
             """)
     session.execute("""TRUNCATE nasalogs;""")
+    insert_log = session.prepare("INSERT INTO "+ table + " (id,host,datetime,path,bytes) VALUES (?,?,?,?,?)")
+    batch = BatchStatement(consistency_level=ConsistencyLevel.ONE)
     for f in os.listdir(inputs):
         with gzip.open(os.path.join(inputs, f), 'rt', encoding='utf-8') as logfile:
             count = 0
-            cql = "BEGIN BATCH "
             for line in logfile:
-                split_log = linex.split(line.replace("'", "_"))
-                if len(split_log) > 4:
-                    cql = cql + "INSERT INTO "+table+" (id, host, datetime, path, bytes) VALUES (UUID(),'"+ split_log[1]+"','"+datetime.datetime.strptime(split_log[2],'%d/%b/%Y:%H:%M:%S').isoformat()+"', '" +split_log[3]+ "', " +split_log[4]+ ");"
-                    count += 1
-                    if count >= 300:
-                        cql = cql + "APPLY BATCH;"
-                        session.execute(cql)
-                        count = 0
-                        cql = "BEGIN BATCH "
-            cql = cql + "APPLY BATCH;"
-            session.execute(cql)
+                word = linex.split(line.replace("'", "_"))
+                if len(word) > 4:
+                	count += 1
+                	batch.add(insert_log,(uuid.uuid1(),word[1],datetime.datetime.strptime(word[2], '%d/%b/%Y:%H:%M:%S'),word[3],int(word[4])))
+                if (count == 200):
+                	session.execute(batch)
+                	count = 0
+                	batch.clear()          	  
+    session.execute(batch)
     cluster.shutdown()
 
 
