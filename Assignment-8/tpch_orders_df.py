@@ -9,11 +9,6 @@ from pyspark.sql.types import StructType, StructField, StringType, FloatType, Ti
 cluster_seeds = ['199.60.17.188', '199.60.17.216']
 spark = SparkSession.builder.appName('Spark Cassandra load table').config('spark.cassandra.connection.host', ','.join(cluster_seeds)).config('spark.dynamicAllocation.maxExecutors', 16).getOrCreate()
 
-# def append((price1, part1),(price2, part2)):
-# 	price = price1
-# 	part = part1 + ", " + part2
-# 	return (price, part)
-
 def output_line(x):
 	orderkey, price, names = x
 	namestr = ', '.join(sorted(list(names)))

@@ -6,9 +6,10 @@ import re, datetime, uuid
 from pyspark.sql import SQLContext, Row, SparkSession, functions, types
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType
 
+cluster_seeds = ['199.60.17.188', '199.60.17.216']
+spark = SparkSession.builder.appName('Spark Cassandra load table').config('spark.cassandra.connection.host', ','.join(cluster_seeds)).getOrCreate()
+
 def main(key_space,table):
-	cluster_seeds = ['199.60.17.188', '199.60.17.216']
-	spark = SparkSession.builder.appName('Spark Cassandra load table').config('spark.cassandra.connection.host', ','.join(cluster_seeds)).getOrCreate()
 	nasa_table = spark.read.format("org.apache.spark.sql.cassandra").options(table=table, keyspace=key_space).load()
 	nasa_table = nasa_table.groupBy(nasa_table.host).agg(functions.count('*').alias('x'),functions.sum(nasa_table.bytes).alias('y')).drop('host')
 	nasa_table = nasa_table.withColumn('n',functions.lit(1)).withColumn('x2',nasa_table.x * nasa_table.x).withColumn('y2',nasa_table.y * nasa_table.y).withColumn('xy',nasa_table.y * nasa_table.x)
