@@ -12,17 +12,14 @@ spark = SparkSession.builder.appName('Spark Cassandra load table').config('spark
                                                                           ','.join(cluster_seeds)).config(
     'spark.dynamicAllocation.maxExecutors', 16).getOrCreate()
 
-
 def output_line(x):
     orderkey, price, names = x
     namestr = ', '.join(sorted(list(names)))
     return 'Order #%d $%.2f: %s' % (orderkey, price, namestr)
 
-
 def read_table(key_space, table):
     df = spark.read.format("org.apache.spark.sql.cassandra").options(table=table, keyspace=key_space).load()
     return df
-
 
 def get_order_keys(order_keys):
     sql = '('
@@ -30,7 +27,6 @@ def get_order_keys(order_keys):
         sql = sql + str(i) + ','
     sql = sql[:-1] + ')'
     return sql
-
 
 def main(key_space, out_dir, order_keys):
     keys = get_order_keys(order_keys)

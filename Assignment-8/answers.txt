@@ -1,0 +1,78 @@
+1.What did you see in the execution plan for the “join in Spark” solution? Why was the execution so fast (and the memory usage so small)?
+
+
+
+2.What was the CREATE TABLE statement you used for the orders_parts table?
+
+CREATE TABLE ehoque.orders_parts (
+    orderkey int PRIMARY KEY,
+    clerk text,
+    comment text,
+    custkey int,
+    order_priority text,
+    orderdate date,
+    orderstatus text,
+    ship_priority int,
+    part_names set<text>,	
+    totalprice decimal
+) WITH bloom_filter_fp_chance = 0.01
+    AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+    AND comment = ''
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+    AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+    AND crc_check_chance = 1.0
+    AND dclocal_read_repair_chance = 0.1
+    AND default_time_to_live = 0
+    AND gc_grace_seconds = 864000
+    AND max_index_interval = 2048
+    AND memtable_flush_period_in_ms = 0
+    AND min_index_interval = 128
+    AND read_repair_chance = 0.0
+    AND speculative_retry = '99PERCENTILE';
+
+3.What were the running times of the two tpch_orders_* programs on the tpch2 data on the cluster? These orderkeys have results in that 
+data set: 2579142 2816486 586119 441985 2863331.
+
+tpch_orders_df.py
+real    1m23.171s
+user    0m47.884s
+sys     0m3.092s
+
+tpch_orders_denorm.py
+real    0m35.339s
+user    0m17.700s
+sys     0m1.348s
+
+
+4.Consider the logic that you would have to implement to maintain the denormalized data (assuming that the orders table had the part_names 
+column in the main data set). Write a few sentences on what you'd have to do when inserting/updating/deleting data in this case.
+
+We will be assuiming each entry in order table will have some part referenced from part table linked through lineitem table. Also update, 
+insert and delete operation will happen in denormalized order table and we will update the other two table accordingly.Here will be the 
+different scenarios
+
+Insert: When insert one entry to 'order' table we need to insert one or multiple entry to 'part' table with the list of partsets we 
+receive. And we need to create entry on 'lineitem' table with the reference from newly created partkey and orderkey. Similarly if 
+insertion happen in 'lineitem' and 'part' table, then it should be reflected in 'order' table as well.
+
+Update: If we update any column other than part_names column in order key then we can do it without affecting the other table. If we update the part name column
+firtst we need to check if the corresponding parts exist or not in the 'parts' table.
+If it not exist, we need to enter the names of the parts in the 'part' table and reference them in 'line' table similar to what we did 
+during insertion. After wards we need to update corresponding partkey and orderkey in 'lineitem' table.If the parts we want to update exist 
+in the part table then we need to update the 'lineitem' table with update partkey and orderkey. Also if we update either of part or lineitem 
+table we need to propagate the change to other two tables as well.
+
+Deletion: For deletion operation whether to actually delete or not can be chosen based on either of two scenarios
+Scenario 1: We will not allow user to delete unless user explicitly mention that deletion will break the link with existing row from 
+part item table. In that case we will raise an error message explaining the issue.
+Scenario 2: We will assume that user is aware of the consequence deletion will affect the associated table as well. And we go ahead with 
+the deletion.
+
+Deletion Process:
+1. First keep track of the orderkey of row that needed to be deleted and delete the row from the order table.
+2. Then we keep track of all the partkey associated with our orderkey from lineitem table.
+3. In the next step we will delete all the rows from line item table associated with our orderkey.
+4. We will lookup for other reference for partkey from step 2 in our lineitem table with different orderkey.
+5. If for some partkey we don't find any reference with any orderkey then we delete corresponding row from part table as well.
+
+We can follow the above similar scenario when we delete from lineitem and parts table as well.
