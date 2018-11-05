@@ -18,7 +18,7 @@ from colour_tools import colour_schema, rgb2lab_query, plot_predictions
 
 def main(inputs):
     data = spark.read.csv(inputs, schema=colour_schema)
-    numlabels = data.select('word').distinct().count()
+    num_labels = data.select('word').distinct().count()
     rgb_to_lab_query = rgb2lab_query(passthrough_columns=['word'])
     train, validation = data.randomSplit([0.75, 0.25])
     train = train.cache()
@@ -29,7 +29,7 @@ def main(inputs):
     lab_assembler = VectorAssembler(inputCols=["labL", "labA", "labB"], outputCol="features")
     word_indexer = StringIndexer(inputCol="word", outputCol="label", handleInvalid='error')
 
-    classifier_mlp = MultilayerPerceptronClassifier(layers=[3, 250, numlabels])
+    classifier_mlp = MultilayerPerceptronClassifier(layers=[3, 250, num_labels])
     classifier_fr = RandomForestClassifier(numTrees = 22, maxDepth = 20, labelCol="label", seed=42)
     sqlTrans = SQLTransformer(statement=rgb_to_lab_query)
 
