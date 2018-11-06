@@ -25,11 +25,12 @@ tmax_schema = types.StructType([
 
 def main(inputs,model_file):
     data = spark.read.csv(inputs, schema=tmax_schema)
+    data.createOrReplaceTempView('yesterday')
     train, validation = data.randomSplit([0.75, 0.25])
     train = train.cache()
     validation = validation.cache()
     
-    sqlTrans = SQLTransformer(statement="""SELECT *, dayofyear( date ) AS day FROM __THIS__""")
+    sqlTrans = SQLTransformer(statement="""SELECT yesterday.station as station,yesterday.latitude as latitude,yesterday.longitude as longitude,yesterday.elevation as elevation, dayofyear( yesterday.date ) AS day,yesterday.tmax AS yesterday_tmax FROM __THIS__ as today INNER JOIN __THIS__ as yesterday ON date_sub(today.date, 1) = yesterday.date AND today.station = yesterday.station""")
     weather_assembler = VectorAssembler(inputCols=["latitude", "longitude", "elevation", "day"], outputCol="features")
     estimator = GBTRegressor()
     word_indexer = StringIndexer(inputCol="station", outputCol="label", handleInvalid='error')
