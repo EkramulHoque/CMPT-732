@@ -30,9 +30,9 @@ def main(inputs,model_file):
     train = train.cache()
     validation = validation.cache()
     
-    sqlTrans = SQLTransformer(statement="""SELECT yesterday.station as station,yesterday.latitude as latitude,yesterday.longitude as longitude,yesterday.elevation as elevation, dayofyear( yesterday.date ) AS day,yesterday.tmax AS yesterday_tmax FROM __THIS__ as today INNER JOIN __THIS__ as yesterday ON date_sub(today.date, 1) = yesterday.date AND today.station = yesterday.station""")
-    weather_assembler = VectorAssembler(inputCols=["latitude", "longitude", "elevation", "day"], outputCol="features")
-    estimator = GBTRegressor()
+    sqlTrans = SQLTransformer(statement="""SELECT today.station as station,today.latitude as latitude,today.longitude as longitude,today.elevation as elevation, dayofyear( today.date ) AS day, today.tmax, yesterday.tmax AS yesterday_tmax FROM __THIS__ as today INNER JOIN __THIS__ as yesterday ON date_sub(today.date, 1) = yesterday.date AND today.station = yesterday.station""")
+    weather_assembler = VectorAssembler(inputCols=["latitude", "longitude", "elevation", "day","yesterday_tmax"], outputCol="features")
+    estimator = GBTRegressor(featuresCol = 'features', labelCol = 'tmax', maxIter = 100)
     word_indexer = StringIndexer(inputCol="station", outputCol="label", handleInvalid='error')
     pipeline = Pipeline(stages=[sqlTrans, weather_assembler,word_indexer, estimator])
     evaluator = RegressionEvaluator()

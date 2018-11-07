@@ -8,7 +8,7 @@ assert spark.version >= '2.3' # make sure we have Spark 2.3+
 spark.sparkContext.setLogLevel('WARN')
 
 from pyspark.ml import PipelineModel
-from pyspark.ml.evaluation import RegressionEvaluator
+from pyspark.ml.evaluation import RegressionEvaluator, MulticlassClassificationEvaluator
 from pyspark.ml.linalg import Vectors
 
 tmax_schema = types.StructType([
@@ -17,7 +17,7 @@ tmax_schema = types.StructType([
     types.StructField('latitude', types.FloatType()),
     types.StructField('longitude', types.FloatType()),
     types.StructField('elevation', types.FloatType()),
-    types.StructField('tmax', types.FloatType()),
+    types.StructField('tmax', types.FloatType())
 ])
 
 
@@ -25,10 +25,14 @@ def test_model(model_file):
 
     # load the model
     model = PipelineModel.load(model_file)
-    inputs = [('sfu',datetime.date(2018, 11, 12),49.2771, -122.9146, 330.0,12.0)]
-    test1 = spark.createDataFrame(inputs,tmax_schema)
-    print(model.transform(test1).head())
-
+    #taken the value of the temperature from the internet 
+    inputs = [
+    ('sfu',datetime.date(2018, 11, 12),49.2771, -122.9146, 330.0,10.0),
+    ('sfu',datetime.date(2018, 11, 11),49.2771, -122.9146, 330.0,11.0)
+    ]
+    test = spark.createDataFrame(inputs,tmax_schema)
+    predictions = model.transform(test)
+    print(predictions.select('prediction').collect())
 
 if __name__ == '__main__':
     model_file = sys.argv[1]
