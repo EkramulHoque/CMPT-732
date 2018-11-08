@@ -28,7 +28,7 @@ def main(inputs):
     train, validation = data.randomSplit([0.75, 0.25])
     train = train.cache()
     validation = validation.cache()
-    
+
     sqlTrans = SQLTransformer(statement="""SELECT *, dayofyear( date ) AS day FROM __THIS__""")
     evaluator = RegressionEvaluator().setLabelCol("tmax").setPredictionCol("tmax_pred")
     weather_assembler = VectorAssembler(inputCols=["latitude", "longitude", "elevation", "day"], outputCol="features")

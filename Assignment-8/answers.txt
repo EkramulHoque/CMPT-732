@@ -1,5 +1,25 @@
 1.What did you see in the execution plan for the “join in Spark” solution? Why was the execution so fast (and the memory usage so small)?
 
+Spark has 'push down' filter which allows the database for better optimized queries. Here we are filtering records according to
+'orderkeys' which has reduced the number of entries retrieved from the database and improve query performance. And when the 
+'broadcasthashjoin' is exectuted, it performs better with small entries i.e small memory usage making the execution faster.
+
+== Physical Plan ==
+ObjectHashAggregate(keys=[orderkey#0, totalprice#8], functions=[collect_set(name#56, 0, 0)])
++- Exchange hashpartitioning(orderkey#0, totalprice#8, 200)
+   +- ObjectHashAggregate(keys=[orderkey#0, totalprice#8], functions=[partial_collect_set(name#56, 0, 0)])
+      +- *(3) Project [orderkey#0, totalprice#8, name#56]
+         +- *(3) BroadcastHashJoin [partkey#26], [partkey#51], Inner, BuildRight
+            :- *(3) Project [orderkey#0, totalprice#8, partkey#26]
+            :  +- *(3) BroadcastHashJoin [orderkey#0], [orderkey#20], Inner, BuildLeft
+            :     :- BroadcastExchange HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)))
+            :     :  +- *(1) Filter isnotnull(orderkey#0)
+            :     :     +- *(1) Scan org.apache.spark.sql.cassandra.CassandraSourceRelation@63f1bcf7 [orderkey#0,totalprice#8] PushedFilters: [*In(orderkey, [151201,986499,28710,193734,810689]), IsNotNull(orderkey)], ReadSchema: struct<orderkey:int,totalprice:decimal(38,18)>
+            :     +- *(3) Filter (isnotnull(orderkey#20) && isnotnull(partkey#26))
+            :        +- *(3) Scan org.apache.spark.sql.cassandra.CassandraSourceRelation@1a94172a [orderkey#20,partkey#26] PushedFilters: [IsNotNull(orderkey), *In(orderkey, [151201,986499,28710,193734,810689]), IsNotNull(partkey)], ReadSchema: struct<orderkey:int,partkey:int>
+            +- BroadcastExchange HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)))
+               +- *(2) Filter isnotnull(partkey#51)
+                  +- *(2) Scan org.apache.spark.sql.cassandra.CassandraSourceRelation@9c15426 [partkey#51,name#56] PushedFilters: [IsNotNull(partkey)], ReadSchema: struct<partkey:int,name:string>
 
 
 2.What was the CREATE TABLE statement you used for the orders_parts table?
@@ -51,28 +71,11 @@ We will be assuiming each entry in order table will have some part referenced fr
 insert and delete operation will happen in denormalized order table and we will update the other two table accordingly.Here will be the 
 different scenarios
 
-Insert: When insert one entry to 'order' table we need to insert one or multiple entry to 'part' table with the list of partsets we 
-receive. And we need to create entry on 'lineitem' table with the reference from newly created partkey and orderkey. Similarly if 
-insertion happen in 'lineitem' and 'part' table, then it should be reflected in 'order' table as well.
+Insert: If data is inserted in 'order' table it should be reflected in 'lineitem' table for each 'part_names' created. 
 
-Update: If we update any column other than part_names column in order key then we can do it without affecting the other table. If we update the part name column
-firtst we need to check if the corresponding parts exist or not in the 'parts' table.
-If it not exist, we need to enter the names of the parts in the 'part' table and reference them in 'line' table similar to what we did 
-during insertion. After wards we need to update corresponding partkey and orderkey in 'lineitem' table.If the parts we want to update exist 
-in the part table then we need to update the 'lineitem' table with update partkey and orderkey. Also if we update either of part or lineitem 
-table we need to propagate the change to other two tables as well.
+Update: Similar procedure like insertion. If we update on 'part_names' table, it should be updated in the 'lineitem' table. The remaining fields will be unaffected.
 
-Deletion: For deletion operation whether to actually delete or not can be chosen based on either of two scenarios
-Scenario 1: We will not allow user to delete unless user explicitly mention that deletion will break the link with existing row from 
-part item table. In that case we will raise an error message explaining the issue.
-Scenario 2: We will assume that user is aware of the consequence deletion will affect the associated table as well. And we go ahead with 
-the deletion.
+Deletion: For instance a row is deleted in 'order' table, then all the entries in the 'lineitem' table will be deleted according to the 'part_names' created. But in part
+table, it will be only deleted if the rows with 'part_names' reference is not linked with other 'lineitem' entries
 
-Deletion Process:
-1. First keep track of the orderkey of row that needed to be deleted and delete the row from the order table.
-2. Then we keep track of all the partkey associated with our orderkey from lineitem table.
-3. In the next step we will delete all the rows from line item table associated with our orderkey.
-4. We will lookup for other reference for partkey from step 2 in our lineitem table with different orderkey.
-5. If for some partkey we don't find any reference with any orderkey then we delete corresponding row from part table as well.
-
-We can follow the above similar scenario when we delete from lineitem and parts table as well.
+The data must be consistent among the reference tables for all the three operations 
