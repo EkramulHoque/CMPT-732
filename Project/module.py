@@ -1,5 +1,5 @@
 
-import random,time
+import random,string
 import yaml_loader as yam
 import csv
 from datetime import datetime, timedelta
@@ -41,7 +41,8 @@ def load_customer():
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
         for row in csv_reader:
-            customer_list[line_count] = Customer(line_count, row["caller"], row["reciever"], row["origin"],row["destination"])
+            alpa_id =  ''.join(random.choice(string.ascii_uppercase) for _ in range(8))
+            customer_list[line_count] = Customer(alpa_id+str("%02d" % (line_count,)), row["caller"], row["reciever"], row["origin"],row["destination"])
             line_count += 1
     return customer_list
 
@@ -93,7 +94,7 @@ def generate():
                    + str(data[j].receiver) + ", " \
                    + str(random.randint(0,1)) + ", " \
                    + str(random.randint(0,1)) + '\n'
-    #print(msg)
+    print(msg)
     return msg
 
 if __name__ == "__main__":
