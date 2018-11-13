@@ -1,0 +1,72 @@
+1.What is your best guess for the slope and intercept of the streaming points being produced?
+
+Answer: The results are almost similar.
+Batch: 49
+-------------------------------------------
++------------------+------------------+--------------------+-------------------+---+-----------------+------------------+
+|              sumx|              sumy|               sumxy|              sumx2|  n|            slope|         intercept|
++------------------+------------------+--------------------+-------------------+---+-----------------+------------------+
+|15587.097186439723|-783927.3835957058|-4.958227904202646E9|9.666904176127164E7|343|-51.2981148660056|45.659820122075125|
++------------------+------------------+--------------------+-------------------+---+-----------------+------------------+
+
+-------------------------------------------
+Batch: 50
+-------------------------------------------
++------------------+------------------+--------------------+-------------------+---+------------------+-----------------+
+|              sumx|              sumy|               sumxy|              sumx2|  n|             slope|        intercept|
++------------------+------------------+--------------------+-------------------+---+------------------+-----------------+
+|14178.250723713063|-711335.1487841727|-5.010334204108353E9|9.768347982901686E7|350|-51.29814854337009|45.66532264572701|
++------------------+------------------+--------------------+-------------------+---+------------------+-----------------+
+
+2.Is your streaming program's estimate of the slope and intercept getting better as the program runs? 
+
+Answer:Yes the program aggregating all of the data from the start of time, initially intercept varies around 46.03 however 
+slope remains around -51.30 but as more data comes its variation reduced and followed a constant trend.
+
+3.In the colour classification question, what were your validation scores for the RGB and LAB pipelines?
+
+Answer: The following pipeline yields the best result.
+'LAB-MLP', Pipeline(stages=[sqlTrans,lab_assembler,word_indexer,classifier_mlp]),
+Score: LAB-MLP 0.7419573564960888 Parameters: maxIter=100, layers=[3, 250, 11]
+Here is the overall score for all the other algorithms
+RGB-forest 0.6957764639453825 - numTrees = 22, maxDepth = 20 seed=42
+LAB-forest 0.7132791466769579 - numTrees = 22, maxDepth = 20 seed=42
+RGB-MLP 0.7034219280713204 - maxIter=200, layers=[3, 250, 11]
+
+4.When predicting the tmax values, did you over-fit the training data (and for which training/validation sets)?
+  
+Answer: We know that lower the error in our regression analysis relative to total error, the higher the r2 value will be and
+the r2 value in general is between 0 and 1. However, a negative r2 value is generated in our 
+from our model which suggest one of the two thing:
+
+1.We forced a regression line through a specific point, typically by setting the intercept. 
+2. Our regression line is worse than mean value i.e the model has used a particular feature
+other than the mean.
+
+So, we can infer this model as under fit using tmax-1 dataset.
+
+Contrary to the tmax-2 dataset, the model generates higher positive r2 value which 
+are consistent in both training and testing data. This means with a larger dataset
+the model has performed well considering the consistency in both training and
+test data and there is no overfitting in this case.
+
+5.What were your testing scores for your model with and without the “yesterday's temperature” feature?	
+Answer:
+	with yesterday temparature	without yesteraday temperature
+r2	-1.891373527				-2.950801329
+rmse	27.71415272				30.20071622
+
+6.If you're using a tree-based model, you'll find a .featureImportances property that describes the relative importance of 
+each feature (code commented out in weather_test.py; if not, skip this question). Have a look with and without 
+the “yesterday's temperature” feature: do the results make sense and suggest that your model is making decisions reasonably? 
+With “yesterday's temperature”, is it just predicting “same as yesterday”?
+
+				Train Error							Test-Error	
+	with yesterday temparature	without yesterday temparature |	with yesterday temparature	without yesterday temparature
+r2	-1.891373527				-2.950801329	      |		0.815769624			0.417976796
+rmse	27.71415272				30.20071622	      |		5.54923323			9.863306031
+
+As we can see, yesterday's temperature do not affect the training and testing error 
+significantly which in turn did not affect the prediction model. 
+
+
