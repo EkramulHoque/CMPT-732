@@ -1,27 +1,7 @@
 
-import random,string
-import yaml_loader as yam
-import csv
+import random
+from utils import load_customer, load_yaml
 from datetime import datetime, timedelta
-import calendar
-
-class Customer:
-    'Common base class for all customer'
-    customer_count = 0
-
-    def __init__(self, id, caller, receiver, origin, destination):
-        self.id = id
-        self.caller = caller
-        self.receiver = receiver
-        self.origin = origin
-        self.destination = destination
-        Customer.customer_count += 1
-
-    def displayCount(self):
-        print("Total Customer" + str(Customer.customer_count))
-
-    def displayCustomer(self):
-        print("ID : " + str(self.id) + " Phone: " + str(self.caller))
 
 def month_converter(month):
     months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -33,19 +13,6 @@ def datetime_range(start, end, delta):
     while current < end:
         yield current
         current += delta
-
-
-def load_customer():
-    customer_list = dict()
-    with open('customer_list.csv', mode='r') as csv_file:
-        csv_reader = csv.DictReader(csv_file)
-        line_count = 0
-        for row in csv_reader:
-            alpa_id =  ''.join(random.choice(string.ascii_uppercase) for _ in range(8))
-            customer_list[line_count] = Customer(alpa_id+str("%02d" % (line_count,)), row["caller"], row["reciever"], row["origin"],row["destination"])
-            line_count += 1
-    return customer_list
-
 
 def check_event(event):
     events = []
@@ -59,10 +26,8 @@ def check_event(event):
 
 def generate():
     filepath = "config.yaml"
-    data = yam.loader(filepath)
+    data = load_yaml(filepath)
     length = data.get('RECORDS')
-
-
     # event_type = data.get('EVENT_TYPE')
     # if event_type == 'Data':
     #     event_type = 1

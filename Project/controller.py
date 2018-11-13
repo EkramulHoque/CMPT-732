@@ -1,5 +1,5 @@
 from kafka import KafkaProducer
-import datetime, time, random, threading
+import time, threading
 import module as md
 
 
