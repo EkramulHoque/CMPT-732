@@ -22,17 +22,32 @@ class Customer:
     def displayCustomer(self):
         print("ID : " + str(self.id) + " Phone: " + str(self.caller))
 
+def load_locations():
+    locations_list = dict()
+    with open('TEST_DATA - Cell_Tower_Location.csv', mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        line_count = 0
+        for row in csv_reader:
+            locations_list[line_count] = row['nodeId']
+            line_count += 1
+    return locations_list,line_count
 
 def load_customer():
     customer_list = dict()
+    locations,location_count = load_locations()
     with open('customer_list.csv', mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
         for row in csv_reader:
+            sindex = random.randint(0,location_count-1)
+            source = locations[sindex]
+            dindex = random.randint(0,location_count-1)
+            while sindex == dindex:
+                dindex = random.randint(0,location_count)
+            destination = locations[dindex]
             alpa_id = ''.join(random.choice(string.ascii_uppercase) for _ in range(8))
             customer_list[line_count] = Customer(alpa_id + str("%02d" % (line_count,)), row["caller"], row["reciever"],
-                                                 str(round(random.uniform(49.0, 50.0),4))+"|"+str(round(random.uniform(-122.0, -123.0),4)),
-                                                 str(round(random.uniform(49.0, 50.0),4))+"|"+str(round(random.uniform(-122.0, -123.0),4)))
+                                                 source,destination)
             line_count += 1
     return customer_list
 
