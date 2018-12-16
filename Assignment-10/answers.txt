@@ -1,0 +1,23 @@
+1.What happened to the HDFS file when one of the nodes it was stored on failed?
+Answer:
+HDFS is highly fault tolerant. It handles faults by the process of replica creation.
+Whenever any machine/node in the cluster goes down, then data can be accessed from 
+other machines in which same copy of data was created.
+
+By default, the replication factor is set to 3. When one of the node failed, the files 
+was replicated to all the other nodes with a replication factor of 3.
+
+This allows the data to be retrieved due to its unique feature of distributed storage 
+
+2.How did YARN/MapReduce behave when one of the compute nodes disappeared?
+Answer:
+Yarn redistributes the work to the active nodes. The task was re-assigned to 
+a new node and computation followed in another node.
+
+3.Were there more things you'd like to try with this cluster, or anything you did try 
+that you think should have been in this assignment?
+
+We could explore how HDFS manage fault tolerance when a node fails and the memory
+of the other active node is already at its limit. What happens when two node fails
+with a replication factor of 3 i.e the datanode is less than the replication factor.
+These can be tested on Yarn/Mapreduce as well.
